@@ -7,8 +7,17 @@ st.title("🏗️ Consultorio BIMMER")
 if "GOOGLE_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
     
-    # Esta configuración es la más compatible con la versión v1beta
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    # BUSCADOR DE MODELOS DISPONIBLES
+    @st.cache_resource
+    def get_working_model():
+        for m in genai.list_models():
+            if 'generateContent' in m.supported_generation_methods:
+                # Retornamos el primer modelo que soporte chat (flash o pro)
+                return m.name
+        return "gemini-1.5-flash" # Fallback
+
+    nombre_modelo = get_working_model()
+    model = genai.GenerativeModel(nombre_modelo)
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
@@ -24,11 +33,10 @@ if "GOOGLE_API_KEY" in st.secrets:
 
         with st.chat_message("assistant"):
             try:
-                # Quitamos cualquier instrucción compleja para probar la conexión pura
                 response = model.generate_content(prompt)
                 st.markdown(response.text)
                 st.session_state.messages.append({"role": "assistant", "content": response.text})
             except Exception as e:
-                st.error(f"Error de conexión: {str(e)}")
+                st.error(f"Error detectado: {str(e)}")
 else:
     st.warning("Falta la API Key en los Secrets.")
