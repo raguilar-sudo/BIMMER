@@ -7,11 +7,8 @@ st.title("🏗️ Consultorio BIMMER")
 if "GOOGLE_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
     
-    # Intentamos con el nombre más simple posible
-    try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
-    except:
-        model = genai.GenerativeModel('gemini-pro')
+    # Esta configuración es la más compatible con la versión v1beta
+    model = genai.GenerativeModel('gemini-1.5-flash')
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
@@ -27,12 +24,11 @@ if "GOOGLE_API_KEY" in st.secrets:
 
         with st.chat_message("assistant"):
             try:
-                # El system instruction lo pasamos aquí para evitar errores de inicialización
-                instruccion = "Eres BIMMER, experto de Bimness.club y Phoenix Consultores. Resuelves dudas de Revit y BIM."
-                response = model.generate_content(f"{instruccion}\n\nUsuario: {prompt}")
+                # Quitamos cualquier instrucción compleja para probar la conexión pura
+                response = model.generate_content(prompt)
                 st.markdown(response.text)
                 st.session_state.messages.append({"role": "assistant", "content": response.text})
             except Exception as e:
-                st.error(f"Error final: {str(e)}")
+                st.error(f"Error de conexión: {str(e)}")
 else:
     st.warning("Falta la API Key en los Secrets.")
