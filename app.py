@@ -12,7 +12,7 @@ if "GOOGLE_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
     
     model = genai.GenerativeModel(
-        model_name="gemini-1.5-pro",
+        model_name="gemini-1.5-flash",
         system_instruction="Tu nombre es BIMMER, consultor experto de Bimness.club y Phoenix Consultores. Tu misión es resolver dudas de Revit, Dynamo y BIM con precisión técnica y tono profesional."
     )
 
