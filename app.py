@@ -1,22 +1,20 @@
 import streamlit as st
 import google.generativeai as genai
 
-# 1. Configuración Visual de BIMMER
 st.set_page_config(page_title="BIMMER - Consultorio 24/7", page_icon="🏗️")
 st.title("🏗️ Consultorio BIMMER")
-st.markdown("---")
 
-# 2. Conexión Segura con Google AI Studio
-# Aquí le decimos a Python que busque la llave en los "Secrets" de Streamlit
+# Verificamos la llave
 if "GOOGLE_API_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+    api_key = st.secrets["GOOGLE_API_KEY"]
+    genai.configure(api_key=api_key)
     
+    # IMPORTANTE: Usamos el nombre técnico exacto del modelo
     model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
-        system_instruction="Tu nombre es BIMMER, consultor experto de Bimness.club y Phoenix Consultores. Tu misión es resolver dudas de Revit, Dynamo y BIM con precisión técnica y tono profesional."
+        model_name="models/gemini-1.5-flash",
+        system_instruction="Eres BIMMER, consultor experto de Bimness.club y Phoenix Consultores. Resuelves dudas de Revit y BIM."
     )
 
-    # Historial de Chat
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
@@ -24,14 +22,18 @@ if "GOOGLE_API_KEY" in st.secrets:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    if prompt := st.chat_input("¿Qué duda técnica tienes hoy?"):
+    if prompt := st.chat_input("¿Qué duda técnica tienes?"):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
-            response = model.generate_content(prompt)
-            st.markdown(response.text)
-            st.session_state.messages.append({"role": "assistant", "content": response.text})
+            try:
+                # Forzamos la respuesta
+                response = model.generate_content(prompt)
+                st.markdown(response.text)
+                st.session_state.messages.append({"role": "assistant", "content": response.text})
+            except Exception as e:
+                st.error(f"Error de conexión: {str(e)}")
 else:
-    st.error("Error de configuración: La API Key no ha sido detectada en los Secrets.")
+    st.warning("Falta la API Key en los Secrets de Streamlit.")
