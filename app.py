@@ -71,3 +71,59 @@ if not st.session_state.auth:
     email_input = st.text_input("Ingresá tu correo autorizado:").lower().strip()
     
     if st.button("Verificar Credenciales"):
+        autorizados = obtener_correos_autorizados()
+        if email_input in autorizados:
+            st.session_state.auth = True
+            st.session_state.user = email_input
+            st.success("✅ Acceso autorizado.")
+            time.sleep(1)
+            st.rerun()
+        else:
+            st.error("❌ El correo no está registrado en Phoenix Consultores.")
+    st.stop()
+
+# --- 5. CONFIGURACIÓN DE IA (GEMINI) ---
+try:
+    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+    # Usamos gemini-1.5-flash para máxima compatibilidad
+    model = genai.GenerativeModel('gemini-1.5-flash')
+except Exception as e:
+    st.error("⚠️ Error de configuración de IA. Verificá los Secrets.")
+    st.stop()
+
+# --- 6. INTERFAZ DE USUARIO ACTIVA ---
+st.sidebar.write(f"👤 **Usuario:** {st.session_state.user}")
+if st.sidebar.button("Cerrar Sesión"):
+    st.session_state.auth = False
+    st.rerun()
+
+st.title("🤖 Consultorio BIMMER")
+archivo = st.file_uploader("📸 BIMMER Vision: Subí una captura de Revit", type=["png", "jpg", "jpeg"])
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+
+if prompt := st.chat_input("¿Cuál es tu duda técnica?"):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    with st.chat_message("assistant"):
+        instruccion = "Sos BIMMER, asistente experto de Phoenix Consultores. Respondé de forma técnica sobre Revit y BIM."
+        try:
+            with st.spinner("BIMMER está pensando..."):
+                if archivo:
+                    img = Image.open(archivo)
+                    response = model.generate_content([instruccion + "\n" + prompt, img])
+                else:
+                    response = model.generate_content(instruccion + "\n" + prompt)
+                
+                full_res = response.text
+                st.markdown(full_res)
+                st.session_state.messages.append({"role": "assistant", "content": full_res})
+        except Exception as e:
+            st.error(f"❌ Error: {str(e)}")
