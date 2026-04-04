@@ -18,7 +18,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. LOGIN ---
+# --- 2. LOGIN (Simplificado para tu acceso) ---
 if 'auth' not in st.session_state:
     st.session_state.auth = False
 
@@ -36,20 +36,26 @@ if not st.session_state.auth:
             st.error("Acceso denegado.")
     st.stop()
 
-# --- 3. CONFIGURACIÓN IA ---
+# --- 3. CONFIGURACIÓN IA (EL CAMBIO CLAVE) ---
 try:
-    # Forzamos la configuración de la API
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
     
-    # Instanciamos el modelo usando el nombre estándar de producción
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    # Si 'gemini-1.5-flash' da 404, probamos con 'gemini-pro' 
+    # que es el modelo más viejo y estable (siempre funciona).
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Prueba rápida:
+        model.generate_content("hola")
+    except:
+        model = genai.GenerativeModel('gemini-pro')
+        
 except Exception as e:
-    st.error(f"Error de Configuración Inicial: {e}")
+    st.error(f"Error de Configuración: {e}")
     st.stop()
 
 # --- 4. INTERFAZ DE CHAT ---
 st.title("🤖 Consultorio BIMMER")
-archivo = st.file_uploader("📸 BIMMER Vision (Capturas de Revit)", type=["png", "jpg", "jpeg"])
+archivo = st.file_uploader("📸 BIMMER Vision", type=["png", "jpg", "jpeg"])
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -66,17 +72,17 @@ if prompt := st.chat_input("¿En qué te ayudo con tus procesos BIM?"):
     with st.chat_message("assistant"):
         try:
             with st.spinner("BIMMER está analizando..."):
-                instruccion = "Sos BIMMER de Phoenix AEC, experto en Revit y metodología BIM."
+                inst = "Sos BIMMER de Phoenix AEC, experto en Revit."
                 
                 if archivo:
                     img = Image.open(archivo)
-                    # El modelo 1.5 Flash requiere una lista si hay imagen
-                    respuesta = model.generate_content([instruccion, prompt, img])
+                    # Usamos una estructura de lista simple
+                    response = model.generate_content([inst, prompt, img])
                 else:
-                    respuesta = model.generate_content(f"{instruccion}\n\nPregunta: {prompt}")
+                    response = model.generate_content(f"{inst}\n{prompt}")
                 
-                texto_final = respuesta.text
-                st.markdown(texto_final)
-                st.session_state.messages.append({"role": "assistant", "content": texto_final})
+                res_text = response.text
+                st.markdown(res_text)
+                st.session_state.messages.append({"role": "assistant", "content": res_text})
         except Exception as e:
             st.error(f"Error en la respuesta: {str(e)}")
