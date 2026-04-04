@@ -3,29 +3,16 @@ import google.generativeai as genai
 import pandas as pd
 from PIL import Image
 import os
-import time
 
 # --- 1. CONFIGURACIÓN ---
 st.set_page_config(page_title="Consultorio BIMMER", page_icon="🐘")
 
-st.markdown("""
-<style>
-    .stApp { background-color: #0E1117; color: #FFFFFF; }
-    .stChatMessage.user { background-color: #1E1E1E; border-radius: 15px; border: 1px solid #444444; color: #FFFFFF !important; }
-    .stChatMessage.assistant { background-color: #004D40; border-radius: 15px; border-left: 5px solid #00A896; color: #FFFFFF !important; }
-    .stButton>button { background-color: #00A896; color: white; border-radius: 20px; width: 100%; border: none; font-weight: bold; }
-    .stChatMessage [data-testid="stMarkdownContainer"] p { color: #FFFFFF !important; }
-</style>
-""", unsafe_allow_html=True)
-
-# --- 2. LOGIN (Simplificado para tu acceso) ---
+# --- 2. LOGIN (Simplificado para raguilar@phoenixaec.com) ---
 if 'auth' not in st.session_state:
     st.session_state.auth = False
 
 if not st.session_state.auth:
-    if os.path.exists("logo_elefante.png"):
-        st.image("logo_elefante.png", width=120)
-    st.title("Consultorio BIMMER")
+    st.title("🐘 Consultorio BIMMER")
     email_input = st.text_input("Ingresá tu correo @phoenixaec.com:").lower().strip()
     if st.button("Verificar Acceso"):
         if email_input == "raguilar@phoenixaec.com":
@@ -36,19 +23,12 @@ if not st.session_state.auth:
             st.error("Acceso denegado.")
     st.stop()
 
-# --- 3. CONFIGURACIÓN IA (EL CAMBIO CLAVE) ---
+# --- 3. CONFIGURACIÓN IA ---
+# Forzamos la configuración antes de cualquier llamada
 try:
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-    
-    # Si 'gemini-1.5-flash' da 404, probamos con 'gemini-pro' 
-    # que es el modelo más viejo y estable (siempre funciona).
-    try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        # Prueba rápida:
-        model.generate_content("hola")
-    except:
-        model = genai.GenerativeModel('gemini-pro')
-        
+    # Usamos gemini-1.5-flash que es el estándar actual
+    model = genai.GenerativeModel('gemini-1.5-flash')
 except Exception as e:
     st.error(f"Error de Configuración: {e}")
     st.stop()
@@ -60,10 +40,12 @@ archivo = st.file_uploader("📸 BIMMER Vision", type=["png", "jpg", "jpeg"])
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Mostrar historial
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
+# Entrada de Chat
 if prompt := st.chat_input("¿En qué te ayudo con tus procesos BIM?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -76,13 +58,17 @@ if prompt := st.chat_input("¿En qué te ayudo con tus procesos BIM?"):
                 
                 if archivo:
                     img = Image.open(archivo)
-                    # Usamos una estructura de lista simple
+                    # Respuesta con imagen
                     response = model.generate_content([inst, prompt, img])
                 else:
+                    # Respuesta solo texto
                     response = model.generate_content(f"{inst}\n{prompt}")
                 
                 res_text = response.text
                 st.markdown(res_text)
                 st.session_state.messages.append({"role": "assistant", "content": res_text})
         except Exception as e:
+            # Si el error persiste, mostramos la lista de modelos disponibles para debuggear
             st.error(f"Error en la respuesta: {str(e)}")
+            if "404" in str(e):
+                st.warning("⚠️ El servidor de Streamlit sigue usando una versión vieja. Intentá reiniciar la app en el panel de Streamlit (Reboot App).")
