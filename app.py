@@ -81,25 +81,4 @@ archivo = st.file_uploader("📸 BIMMER Vision: Subí una captura de Revit", typ
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-
-if prompt := st.chat_input("¿Cuál es tu duda técnica?"):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    with st.chat_message("assistant"):
-        instruccion = "Sos BIMMER, asistente experto de Phoenix Consultores. Respondé de forma técnica sobre Revit y BIM."
-        try:
-            with st.spinner("BIMMER está pensando..."):
-                if archivo:
-                    img = Image.open(archivo)
-                    response = model.generate_content([instruccion + "\n" + prompt, img])
-                else:
-                    response = model.generate_content(instruccion + "\n" + prompt)
-                
-                full_res = response.text
-                st.markdown(full_res)
-                st.session_state.messages.append({"role": "
+# Mostrar
