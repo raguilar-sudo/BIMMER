@@ -11,38 +11,27 @@ st.set_page_config(page_title="Consultorio BIMMER", page_icon="🐘", layout="ce
 # --- 2. ESTILO OSCURO PHOENIX (CSS) ---
 st.markdown("""
 <style>
-    /* Fondo General */
     .stApp { background-color: #0E1117; color: #FFFFFF; }
-    
-    /* Inputs y Textos */
     input, textarea, .stTextInput>div>div>input { 
         color: #FFFFFF !important; 
         background-color: #262730 !important; 
         border: 1px solid #333333 !important;
     }
-    
-    /* Burbujas de Chat: Usuario */
     .stChatMessage.user { 
         background-color: #1E1E1E; 
         border-radius: 15px; 
         border: 1px solid #444444; 
         color: #FFFFFF !important; 
     }
-    
-    /* Burbujas de Chat: BIMMER */
     .stChatMessage.assistant { 
         background-color: #004D40; 
         border-radius: 15px; 
         border-left: 5px solid #00A896; 
         color: #FFFFFF !important; 
     }
-    
-    /* Forzar color de texto blanco en Markdown */
     .stChatMessage [data-testid="stMarkdownContainer"] p {
         color: #FFFFFF !important;
     }
-
-    /* Botón Turquesa Phoenix */
     .stButton>button { 
         background-color: #00A896; 
         color: white; 
@@ -51,12 +40,6 @@ st.markdown("""
         border: none;
         font-weight: bold;
     }
-    .stButton>button:hover { 
-        background-color: #008f7e; 
-        color: white; 
-    }
-
-    /* Ocultar elementos innecesarios */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
 </style>
@@ -68,10 +51,45 @@ def obtener_correos_autorizados():
     url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
     try:
         df = pd.read_csv(url)
-        # Limpiamos la primera columna (A) de correos
         return df.iloc[:, 0].astype(str).str.lower().str.strip().tolist()
     except Exception:
-        return ["rogeliocruz@phoenix.cr"] # Respaldo por si falla la red
+        return ["rogeliocruz@phoenix.cr"]
 
 # --- 4. LÓGICA DE LOGIN ---
-if 'auth' not in st.session_
+if 'auth' not in st.session_state:
+    st.session_state.auth = False
+
+if not st.session_state.auth:
+    if os.path.exists("logo_elefante.png"):
+        st.image("logo_elefante.png", width=120)
+    else:
+        st.title("🐘")
+    
+    st.title("Consultorio BIMMER")
+    st.subheader("Acceso Phoenix Consultores")
+    
+    email_input = st.text_input("Ingresá tu correo autorizado:").lower().strip()
+    
+    if st.button("Verificar Credenciales"):
+        autorizados = obtener_correos_autorizados()
+        if email_input in autorizados:
+            st.session_state.auth = True
+            st.session_state.user = email_input
+            st.success("✅ Acceso autorizado.")
+            time.sleep(1)
+            st.rerun()
+        else:
+            st.error("❌ El correo no está registrado en Phoenix Consultores.")
+    st.stop()
+
+# --- 5. CONFIGURACIÓN DE IA (GEMINI) ---
+try:
+    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+    # Usamos gemini-1.5-flash para evitar errores de versión
+    model = genai.GenerativeModel('gemini-1.5-flash')
+except Exception as e:
+    st.error("⚠️ Error de configuración de IA. Verificá los Secrets.")
+    st.stop()
+
+# --- 6. INTERFAZ DE USUARIO ACTIVA ---
+st.sidebar.write(f"👤 **Usuario:**
