@@ -17,29 +17,10 @@ st.markdown("""
         background-color: #262730 !important; 
         border: 1px solid #333333 !important;
     }
-    .stChatMessage.user { 
-        background-color: #1E1E1E; 
-        border-radius: 15px; 
-        border: 1px solid #444444; 
-        color: #FFFFFF !important; 
-    }
-    .stChatMessage.assistant { 
-        background-color: #004D40; 
-        border-radius: 15px; 
-        border-left: 5px solid #00A896; 
-        color: #FFFFFF !important; 
-    }
-    .stChatMessage [data-testid="stMarkdownContainer"] p {
-        color: #FFFFFF !important;
-    }
-    .stButton>button { 
-        background-color: #00A896; 
-        color: white; 
-        border-radius: 20px; 
-        width: 100%; 
-        border: none;
-        font-weight: bold;
-    }
+    .stChatMessage.user { background-color: #1E1E1E; border-radius: 15px; border: 1px solid #444444; color: #FFFFFF !important; }
+    .stChatMessage.assistant { background-color: #004D40; border-radius: 15px; border-left: 5px solid #00A896; color: #FFFFFF !important; }
+    .stChatMessage [data-testid="stMarkdownContainer"] p { color: #FFFFFF !important; }
+    .stButton>button { background-color: #00A896; color: white; border-radius: 20px; width: 100%; border: none; font-weight: bold; }
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
 </style>
@@ -64,12 +45,9 @@ if not st.session_state.auth:
         st.image("logo_elefante.png", width=120)
     else:
         st.title("🐘")
-    
     st.title("Consultorio BIMMER")
     st.subheader("Acceso Phoenix Consultores")
-    
     email_input = st.text_input("Ingresá tu correo autorizado:").lower().strip()
-    
     if st.button("Verificar Credenciales"):
         autorizados = obtener_correos_autorizados()
         if email_input in autorizados:
@@ -85,8 +63,8 @@ if not st.session_state.auth:
 # --- 5. CONFIGURACIÓN DE IA (GEMINI) ---
 try:
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-    # Usamos gemini-1.5-flash para máxima compatibilidad
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    # USAMOS LA VERSIÓN LATEST PARA EVITAR EL ERROR 404
+    model = genai.GenerativeModel('gemini-1.5-flash-latest')
 except Exception as e:
     st.error("⚠️ Error de configuración de IA. Verificá los Secrets.")
     st.stop()
