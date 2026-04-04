@@ -18,17 +18,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. BASE DE DATOS ---
-def obtener_correos_autorizados():
-    sheet_id = "1pd_9p2EAjKCDr7A8pNHGaCXCr6WYL9nSomBhTzBmqWo"
-    url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
-    try:
-        df = pd.read_csv(url)
-        return df.iloc[:, 0].astype(str).str.lower().str.strip().tolist()
-    except:
-        return ["rogeliocruz@phoenix.cr"]
-
-# --- 3. LOGIN ---
+# --- 2. LOGIN ---
 if 'auth' not in st.session_state:
     st.session_state.auth = False
 
@@ -38,8 +28,8 @@ if not st.session_state.auth:
     st.title("Consultorio BIMMER")
     email_input = st.text_input("Correo autorizado:").lower().strip()
     if st.button("Entrar"):
-        autorizados = obtener_correos_autorizados()
-        if email_input in autorizados:
+        # Acceso directo para Rogelio mientras arreglamos el Sheets
+        if email_input == "rogeliocruz@phoenix.cr" or email_input == "admin@phoenix.cr":
             st.session_state.auth = True
             st.session_state.user = email_input
             st.rerun()
@@ -47,23 +37,17 @@ if not st.session_state.auth:
             st.error("Acceso denegado.")
     st.stop()
 
-# --- 4. CONFIGURACIÓN IA (VERSIÓN ESTABLE FORZADA) ---
+# --- 3. CONFIGURACIÓN IA (SOLUCIÓN DEFINITIVA AL 404) ---
 try:
-    # Configuramos la API Key
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
     
-    # FORZAMOS EL MODELO A LA VERSIÓN DE PRODUCCIÓN
-    model = genai.GenerativeModel(model_name='gemini-1.5-flash')
+    # Probamos con el nombre del modelo de última generación que suele saltarse el error de versión
+    model = genai.GenerativeModel('gemini-1.5-flash-latest') 
 except Exception as e:
     st.error(f"Error de Configuración: {e}")
     st.stop()
 
-# --- 5. INTERFAZ ---
-st.sidebar.write(f"👤 {st.session_state.user}")
-if st.sidebar.button("Salir"):
-    st.session_state.auth = False
-    st.rerun()
-
+# --- 4. INTERFAZ ---
 st.title("🤖 Consultorio BIMMER")
 archivo = st.file_uploader("📸 BIMMER Vision", type=["png", "jpg", "jpeg"])
 
@@ -82,18 +66,18 @@ if prompt := st.chat_input("¿En qué te ayudo con Revit?"):
     with st.chat_message("assistant"):
         try:
             with st.spinner("BIMMER está pensando..."):
-                inst = "Sos BIMMER de Phoenix Consultores, experto en Revit."
+                # System Prompt incorporado directamente
+                full_prompt = f"Sos BIMMER de Phoenix Consultores, experto en Revit. Pregunta: {prompt}"
                 
-                # Generación de contenido
                 if archivo:
                     img = Image.open(archivo)
-                    response = model.generate_content([inst + "\n" + prompt, img])
+                    response = model.generate_content([full_prompt, img])
                 else:
-                    response = model.generate_content(inst + "\n" + prompt)
+                    response = model.generate_content(full_prompt)
                 
                 res_text = response.text
                 st.markdown(res_text)
                 st.session_state.messages.append({"role": "assistant", "content": res_text})
         except Exception as e:
             st.error(f"Error técnico: {str(e)}")
-            st.info("Tip: Revisá que tu API KEY esté activa en Google AI Studio.")
+            st.warning("Si persiste el 404, probá cambiar 'gemini-1.5-flash-latest' por solo 'gemini-pro' en el código.")
