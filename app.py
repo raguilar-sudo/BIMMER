@@ -18,7 +18,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. BASE DE DATOS (GOOGLE SHEETS) ---
+# --- 2. BASE DE DATOS ---
 def obtener_correos_autorizados():
     sheet_id = "1pd_9p2EAjKCDr7A8pNHGaCXCr6WYL9nSomBhTzBmqWo"
     url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
@@ -47,17 +47,18 @@ if not st.session_state.auth:
             st.error("Acceso denegado.")
     st.stop()
 
-# --- 4. CONFIGURACIÓN IA (CORRECCIÓN 404) ---
+# --- 4. CONFIGURACIÓN IA (VERSIÓN ESTABLE FORZADA) ---
 try:
+    # Configuramos la API Key
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-    # Usamos el nombre del modelo sin el prefijo 'models/' si da error, 
-    # o probamos con la versión estable:
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    
+    # FORZAMOS EL MODELO A LA VERSIÓN DE PRODUCCIÓN
+    model = genai.GenerativeModel(model_name='gemini-1.5-flash')
 except Exception as e:
-    st.error(f"Error de API: {e}")
+    st.error(f"Error de Configuración: {e}")
     st.stop()
 
-# --- 5. INTERFAZ DE CHAT ---
+# --- 5. INTERFAZ ---
 st.sidebar.write(f"👤 {st.session_state.user}")
 if st.sidebar.button("Salir"):
     st.session_state.auth = False
@@ -69,12 +70,10 @@ archivo = st.file_uploader("📸 BIMMER Vision", type=["png", "jpg", "jpeg"])
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Historial
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# Entrada de Chat
 if prompt := st.chat_input("¿En qué te ayudo con Revit?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -84,9 +83,10 @@ if prompt := st.chat_input("¿En qué te ayudo con Revit?"):
         try:
             with st.spinner("BIMMER está pensando..."):
                 inst = "Sos BIMMER de Phoenix Consultores, experto en Revit."
+                
+                # Generación de contenido
                 if archivo:
                     img = Image.open(archivo)
-                    # En la versión estable, pasamos la lista con prompt e imagen
                     response = model.generate_content([inst + "\n" + prompt, img])
                 else:
                     response = model.generate_content(inst + "\n" + prompt)
@@ -95,4 +95,5 @@ if prompt := st.chat_input("¿En qué te ayudo con Revit?"):
                 st.markdown(res_text)
                 st.session_state.messages.append({"role": "assistant", "content": res_text})
         except Exception as e:
-            st.error(f"Error al generar respuesta: {e}")
+            st.error(f"Error técnico: {str(e)}")
+            st.info("Tip: Revisá que tu API KEY esté activa en Google AI Studio.")
