@@ -71,25 +71,3 @@ if not st.session_state.auth:
     email_input = st.text_input("Ingresá tu correo autorizado:").lower().strip()
     
     if st.button("Verificar Credenciales"):
-        autorizados = obtener_correos_autorizados()
-        if email_input in autorizados:
-            st.session_state.auth = True
-            st.session_state.user = email_input
-            st.success("✅ Acceso autorizado.")
-            time.sleep(1)
-            st.rerun()
-        else:
-            st.error("❌ El correo no está registrado en Phoenix Consultores.")
-    st.stop()
-
-# --- 5. CONFIGURACIÓN DE IA (GEMINI) ---
-try:
-    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-    # Usamos gemini-1.5-flash para evitar errores de versión
-    model = genai.GenerativeModel('gemini-1.5-flash')
-except Exception as e:
-    st.error("⚠️ Error de configuración de IA. Verificá los Secrets.")
-    st.stop()
-
-# --- 6. INTERFAZ DE USUARIO ACTIVA ---
-st.sidebar.write(f"👤 **Usuario:**
