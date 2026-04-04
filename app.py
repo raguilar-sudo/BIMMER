@@ -8,13 +8,13 @@ import time
 # --- 1. CONFIGURACIÓN ---
 st.set_page_config(page_title="Consultorio BIMMER", page_icon="🐘")
 
-# Estilo Phoenix Consultores
 st.markdown("""
 <style>
     .stApp { background-color: #0E1117; color: #FFFFFF; }
     .stChatMessage.user { background-color: #1E1E1E; border-radius: 15px; border: 1px solid #444444; color: #FFFFFF !important; }
     .stChatMessage.assistant { background-color: #004D40; border-radius: 15px; border-left: 5px solid #00A896; color: #FFFFFF !important; }
     .stButton>button { background-color: #00A896; color: white; border-radius: 20px; width: 100%; border: none; font-weight: bold; }
+    .stChatMessage p { color: #FFFFFF !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -47,18 +47,15 @@ if not st.session_state.auth:
             st.error("Acceso denegado.")
     st.stop()
 
-# --- 4. SI YA ESTÁ AUTENTICADO, CARGAR TODO LO DEMÁS ---
-# (Esto es lo que hace que aparezca el chat)
-
-# Configurar IA
+# --- 4. CONFIGURACIÓN IA ---
 try:
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
     model = genai.GenerativeModel('models/gemini-1.5-flash')
 except Exception as e:
-    st.error(f"Error de API Key: {e}")
+    st.error(f"Error de API: {e}")
     st.stop()
 
-# Interfaz
+# --- 5. INTERFAZ DE CHAT ---
 st.sidebar.write(f"👤 {st.session_state.user}")
 if st.sidebar.button("Salir"):
     st.session_state.auth = False
@@ -70,12 +67,29 @@ archivo = st.file_uploader("📸 BIMMER Vision", type=["png", "jpg", "jpeg"])
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Dibujar historial
+# Historial
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# Cuadro de entrada de texto
+# Entrada de Chat
 if prompt := st.chat_input("¿En qué te ayudo con Revit?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
+        st.markdown(prompt)
+
+    with st.chat_message("assistant"):
+        try:
+            with st.spinner("BIMMER está pensando..."):
+                inst = "Sos BIMMER de Phoenix Consultores, experto en Revit."
+                if archivo:
+                    img = Image.open(archivo)
+                    response = model.generate_content([inst + "\n" + prompt, img])
+                else:
+                    response = model.generate_content(inst + "\n" + prompt)
+                
+                res_text = response.text
+                st.markdown(res_text)
+                st.session_state.messages.append({"role": "assistant", "content": res_text})
+        except Exception as e:
+            st.error(f"Error: {e}")
