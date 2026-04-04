@@ -38,16 +38,18 @@ if not st.session_state.auth:
 
 # --- 3. CONFIGURACIÓN IA ---
 try:
+    # Forzamos la configuración de la API
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-    # Nombre de modelo estándar sin prefijos para evitar el error 404
+    
+    # Instanciamos el modelo usando el nombre estándar de producción
     model = genai.GenerativeModel('gemini-1.5-flash')
 except Exception as e:
-    st.error(f"Error de Configuración: {e}")
+    st.error(f"Error de Configuración Inicial: {e}")
     st.stop()
 
 # --- 4. INTERFAZ DE CHAT ---
 st.title("🤖 Consultorio BIMMER")
-archivo = st.file_uploader("📸 BIMMER Vision", type=["png", "jpg", "jpeg"])
+archivo = st.file_uploader("📸 BIMMER Vision (Capturas de Revit)", type=["png", "jpg", "jpeg"])
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -64,15 +66,17 @@ if prompt := st.chat_input("¿En qué te ayudo con tus procesos BIM?"):
     with st.chat_message("assistant"):
         try:
             with st.spinner("BIMMER está analizando..."):
-                inst = "Sos BIMMER de Phoenix AEC, experto en Revit y metodología BIM."
+                instruccion = "Sos BIMMER de Phoenix AEC, experto en Revit y metodología BIM."
+                
                 if archivo:
                     img = Image.open(archivo)
-                    response = model.generate_content([inst + "\n" + prompt, img])
+                    # El modelo 1.5 Flash requiere una lista si hay imagen
+                    respuesta = model.generate_content([instruccion, prompt, img])
                 else:
-                    response = model.generate_content(inst + "\n" + prompt)
+                    respuesta = model.generate_content(f"{instruccion}\n\nPregunta: {prompt}")
                 
-                res_text = response.text
-                st.markdown(res_text)
-                st.session_state.messages.append({"role": "assistant", "content": res_text})
+                texto_final = respuesta.text
+                st.markdown(texto_final)
+                st.session_state.messages.append({"role": "assistant", "content": texto_final})
         except Exception as e:
             st.error(f"Error en la respuesta: {str(e)}")
