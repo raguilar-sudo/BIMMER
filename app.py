@@ -14,7 +14,7 @@ st.markdown("""
     .stChatMessage.user { background-color: #1E1E1E; border-radius: 15px; border: 1px solid #444444; color: #FFFFFF !important; }
     .stChatMessage.assistant { background-color: #004D40; border-radius: 15px; border-left: 5px solid #00A896; color: #FFFFFF !important; }
     .stButton>button { background-color: #00A896; color: white; border-radius: 20px; width: 100%; border: none; font-weight: bold; }
-    .stChatMessage p { color: #FFFFFF !important; }
+    .stChatMessage [data-testid="stMarkdownContainer"] p { color: #FFFFFF !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -26,7 +26,6 @@ def obtener_correos_autorizados():
         df = pd.read_csv(url)
         return df.iloc[:, 0].astype(str).str.lower().str.strip().tolist()
     except:
-        # Respaldo con tu correo correcto
         return ["raguilar@phoenixaec.com"]
 
 # --- 3. LOGIN ---
@@ -37,31 +36,24 @@ if not st.session_state.auth:
     if os.path.exists("logo_elefante.png"):
         st.image("logo_elefante.png", width=120)
     st.title("Consultorio BIMMER")
-    st.subheader("Acceso Phoenix Consultores")
-    
-    email_input = st.text_input("Ingresá tu correo profesional:").lower().strip()
-    
+    email_input = st.text_input("Ingresá tu correo @phoenixaec.com:").lower().strip()
     if st.button("Verificar Acceso"):
-        with st.spinner("Validando credenciales..."):
-            autorizados = obtener_correos_autorizados()
-            # Validación con tu correo real: raguilar@phoenixaec.com
-            if email_input in autorizados or email_input == "raguilar@phoenixaec.com":
-                st.session_state.auth = True
-                st.session_state.user = email_input
-                st.success(f"✅ ¡Bienvenido, Rogelio Aguilar!")
-                time.sleep(1)
-                st.rerun()
-            else:
-                st.error("❌ Acceso denegado. El correo no está en la lista de Phoenix AEC.")
+        autorizados = obtener_correos_autorizados()
+        if email_input in autorizados or email_input == "raguilar@phoenixaec.com":
+            st.session_state.auth = True
+            st.session_state.user = email_input
+            st.rerun()
+        else:
+            st.error("Acceso denegado.")
     st.stop()
 
-# --- 4. CONFIGURACIÓN IA (VERSIÓN ESTABLE) ---
+# --- 4. CONFIGURACIÓN IA (SOLUCIÓN AL ERROR 404) ---
 try:
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-    # Nombre del modelo estándar para máxima compatibilidad
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    # Usamos el nombre del modelo estable de producción para evitar la ruta v1beta
+    model = genai.GenerativeModel('gemini-1.5-flash-latest') 
 except Exception as e:
-    st.error(f"Error de Configuración: {e}")
+    st.error(f"Error de Configuración de IA: {e}")
     st.stop()
 
 # --- 5. INTERFAZ DE CHAT ---
@@ -71,7 +63,7 @@ if st.sidebar.button("Cerrar Sesión"):
     st.rerun()
 
 st.title("🤖 Consultorio BIMMER")
-archivo = st.file_uploader("📸 BIMMER Vision (Capturas de Revit)", type=["png", "jpg", "jpeg"])
+archivo = st.file_uploader("📸 BIMMER Vision: Subí una captura de Revit", type=["png", "jpg", "jpeg"])
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -88,7 +80,7 @@ if prompt := st.chat_input("¿En qué te ayudo con tus procesos BIM?"):
     with st.chat_message("assistant"):
         try:
             with st.spinner("BIMMER está analizando..."):
-                inst = "Sos BIMMER de Phoenix Consultores, experto en Revit y metodología AEC."
+                inst = "Sos BIMMER de Phoenix AEC, experto en Revit y metodología BIM."
                 if archivo:
                     img = Image.open(archivo)
                     response = model.generate_content([inst + "\n" + prompt, img])
@@ -100,3 +92,4 @@ if prompt := st.chat_input("¿En qué te ayudo con tus procesos BIM?"):
                 st.session_state.messages.append({"role": "assistant", "content": res_text})
         except Exception as e:
             st.error(f"Error técnico: {str(e)}")
+            st.info("Tip: Si el 404 persiste, intentá cambiar 'gemini-1.5-flash-latest' por 'gemini-1.5-pro-latest' en el código.")
