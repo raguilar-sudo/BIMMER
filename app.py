@@ -62,11 +62,15 @@ if not st.session_state.auth:
 
 # --- 5. CONFIGURACIÓN DE IA (GEMINI) ---
 try:
+    # Configuramos la API Key
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-    # USAMOS LA VERSIÓN LATEST PARA EVITAR EL ERROR 404
-    model = genai.GenerativeModel('gemini-1.5-flash-latest')
+    
+    # IMPORTANTE: Usamos el nombre del modelo sin el sufijo -latest
+    # y lo asignamos a la variable model
+    model = genai.GenerativeModel('models/gemini-1.5-flash')
+    
 except Exception as e:
-    st.error("⚠️ Error de configuración de IA. Verificá los Secrets.")
+    st.error(f"⚠️ Error de configuración de IA: {str(e)}")
     st.stop()
 
 # --- 6. INTERFAZ DE USUARIO ACTIVA ---
@@ -96,6 +100,7 @@ if prompt := st.chat_input("¿Cuál es tu duda técnica?"):
             with st.spinner("BIMMER está pensando..."):
                 if archivo:
                     img = Image.open(archivo)
+                    # Enviamos la instrucción y la imagen al modelo
                     response = model.generate_content([instruccion + "\n" + prompt, img])
                 else:
                     response = model.generate_content(instruccion + "\n" + prompt)
@@ -104,4 +109,4 @@ if prompt := st.chat_input("¿Cuál es tu duda técnica?"):
                 st.markdown(full_res)
                 st.session_state.messages.append({"role": "assistant", "content": full_res})
         except Exception as e:
-            st.error(f"❌ Error: {str(e)}")
+            st.error(f"❌ Error al generar respuesta: {str(e
