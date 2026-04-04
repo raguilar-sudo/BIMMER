@@ -47,10 +47,12 @@ if not st.session_state.auth:
             st.error("Acceso denegado.")
     st.stop()
 
-# --- 4. CONFIGURACIÓN IA ---
+# --- 4. CONFIGURACIÓN IA (CORRECCIÓN 404) ---
 try:
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-    model = genai.GenerativeModel('models/gemini-1.5-flash')
+    # Usamos el nombre del modelo sin el prefijo 'models/' si da error, 
+    # o probamos con la versión estable:
+    model = genai.GenerativeModel('gemini-1.5-flash')
 except Exception as e:
     st.error(f"Error de API: {e}")
     st.stop()
@@ -84,6 +86,7 @@ if prompt := st.chat_input("¿En qué te ayudo con Revit?"):
                 inst = "Sos BIMMER de Phoenix Consultores, experto en Revit."
                 if archivo:
                     img = Image.open(archivo)
+                    # En la versión estable, pasamos la lista con prompt e imagen
                     response = model.generate_content([inst + "\n" + prompt, img])
                 else:
                     response = model.generate_content(inst + "\n" + prompt)
@@ -92,4 +95,4 @@ if prompt := st.chat_input("¿En qué te ayudo con Revit?"):
                 st.markdown(res_text)
                 st.session_state.messages.append({"role": "assistant", "content": res_text})
         except Exception as e:
-            st.error(f"Error: {e}")
+            st.error(f"Error al generar respuesta: {e}")
