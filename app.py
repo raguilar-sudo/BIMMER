@@ -47,11 +47,14 @@ if not st.session_state.auth:
             st.error("Acceso denegado.")
     st.stop()
 
-# --- 4. CONFIGURACIÓN IA (SOLUCIÓN AL ERROR 404) ---
+# --- 4. CONFIGURACIÓN IA (VERSIÓN ESTABLE FORZADA) ---
 try:
+    # Configuramos la API Key
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-    # Usamos el nombre del modelo estable de producción para evitar la ruta v1beta
-    model = genai.GenerativeModel('gemini-1.5-flash-latest') 
+    
+    # LA CLAVE: Usamos el nombre base del modelo que es el más compatible
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    
 except Exception as e:
     st.error(f"Error de Configuración de IA: {e}")
     st.stop()
@@ -81,6 +84,8 @@ if prompt := st.chat_input("¿En qué te ayudo con tus procesos BIM?"):
         try:
             with st.spinner("BIMMER está analizando..."):
                 inst = "Sos BIMMER de Phoenix AEC, experto en Revit y metodología BIM."
+                
+                # Generamos contenido asegurándonos de que la llamada sea limpia
                 if archivo:
                     img = Image.open(archivo)
                     response = model.generate_content([inst + "\n" + prompt, img])
@@ -91,5 +96,7 @@ if prompt := st.chat_input("¿En qué te ayudo con tus procesos BIM?"):
                 st.markdown(res_text)
                 st.session_state.messages.append({"role": "assistant", "content": res_text})
         except Exception as e:
+            # Si vuelve a dar 404, mostramos un mensaje útil
             st.error(f"Error técnico: {str(e)}")
-            st.info("Tip: Si el 404 persiste, intentá cambiar 'gemini-1.5-flash-latest' por 'gemini-1.5-pro-latest' en el código.")
+            if "404" in str(e):
+                st.warning("⚠️ Google está rechazando la conexión. Por favor, verificá que tu API KEY en los Secrets sea la correcta y que no tenga restricciones en Google AI Studio.")
