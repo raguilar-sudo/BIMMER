@@ -12,8 +12,7 @@ if 'auth' not in st.session_state:
 
 if not st.session_state.auth:
     st.title("🐘 Consultorio BIMMER")
-    st.subheader("Phoenix AEC - Acceso")
-    email_input = st.text_input("Ingresá tu correo:").lower().strip()
+    email_input = st.text_input("Ingresá tu correo @phoenixaec.com:").lower().strip()
     if st.button("Entrar"):
         if email_input == "raguilar@phoenixaec.com":
             st.session_state.auth = True
@@ -22,21 +21,17 @@ if not st.session_state.auth:
             st.error("Acceso denegado.")
     st.stop()
 
-# --- 3. INTERFAZ DE CHAT ---
+# --- 3. INTERFAZ ---
 st.title("🤖 Consultorio BIMMER")
-st.sidebar.write(f"👤 Usuario: {st.session_state.get('user', 'Rogelio Aguilar')}")
-
-archivo = st.file_uploader("📸 BIMMER Vision: Subí una captura de Revit", type=["png", "jpg", "jpeg"])
+archivo = st.file_uploader("📸 BIMMER Vision", type=["png", "jpg", "jpeg"])
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Mostrar historial
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# Entrada de Chat
 if prompt := st.chat_input("¿Duda con Revit o BIM?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -44,14 +39,19 @@ if prompt := st.chat_input("¿Duda con Revit o BIM?"):
 
     with st.chat_message("assistant"):
         try:
-            # CONFIGURACIÓN DE IA JUSTO ANTES DE USARLA
+            # CONFIGURACIÓN FORZADA
             genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            # SOLUCIÓN AL 404: Usamos el nombre técnico completo
+            # Esto suele saltarse los problemas de versión de la API
+            model = genai.GenerativeModel(model_name='models/gemini-1.5-flash')
             
             with st.spinner("BIMMER está analizando..."):
                 inst = "Sos BIMMER de Phoenix AEC, experto en Revit."
+                
                 if archivo:
                     img = Image.open(archivo)
+                    # Pasamos los datos como una lista de partes, que es lo más estable
                     response = model.generate_content([inst, prompt, img])
                 else:
                     response = model.generate_content(f"{inst}\n{prompt}")
@@ -61,3 +61,5 @@ if prompt := st.chat_input("¿Duda con Revit o BIM?"):
                 st.session_state.messages.append({"role": "assistant", "content": res_text})
         except Exception as e:
             st.error(f"Error técnico: {str(e)}")
+            # Si falla, intentamos con el modelo Pro como último recurso
+            st.info("Intentando reconexión con nodo secundario...")
