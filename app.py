@@ -96,6 +96,4 @@ if st.sidebar.button("Cerrar Sesión"):
     st.session_state.auth = False
     st.rerun()
 
-st.title("🤖 Consultorio BIMMER")
-
-archivo = st.file_uploader("📸 BIMMER Vision
+st.title("
