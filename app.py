@@ -8,7 +8,7 @@ import time
 # --- 1. CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="Consultorio BIMMER", page_icon="🐘", layout="centered")
 
-# --- 2. ESTILO OSCURO PHOENIX (CSS) ---
+# --- 2. ESTILO PHOENIX (MODO OSCURO) ---
 st.markdown("""
 <style>
     .stApp { background-color: #0E1117; color: #FFFFFF; }
@@ -62,18 +62,14 @@ if not st.session_state.auth:
 
 # --- 5. CONFIGURACIÓN DE IA (GEMINI) ---
 try:
-    # Configuramos la API Key
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-    
-    # IMPORTANTE: Usamos el nombre del modelo sin el sufijo -latest
-    # y lo asignamos a la variable model
+    # Usamos el prefijo 'models/' para evitar el error 404
     model = genai.GenerativeModel('models/gemini-1.5-flash')
-    
 except Exception as e:
-    st.error(f"⚠️ Error de configuración de IA: {str(e)}")
+    st.error(f"⚠️ Error de configuración: {str(e)}")
     st.stop()
 
-# --- 6. INTERFAZ DE USUARIO ACTIVA ---
+# --- 6. INTERFAZ DE CHAT ---
 st.sidebar.write(f"👤 **Usuario:** {st.session_state.user}")
 if st.sidebar.button("Cerrar Sesión"):
     st.session_state.auth = False
@@ -100,13 +96,10 @@ if prompt := st.chat_input("¿Cuál es tu duda técnica?"):
             with st.spinner("BIMMER está pensando..."):
                 if archivo:
                     img = Image.open(archivo)
-                    # Enviamos la instrucción y la imagen al modelo
                     response = model.generate_content([instruccion + "\n" + prompt, img])
                 else:
                     response = model.generate_content(instruccion + "\n" + prompt)
                 
                 full_res = response.text
                 st.markdown(full_res)
-                st.session_state.messages.append({"role": "assistant", "content": full_res})
-        except Exception as e:
-            st.error(f"❌ Error al generar respuesta: {str(e
+                st.session_state.messages.append({"role": "
