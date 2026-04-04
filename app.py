@@ -83,7 +83,6 @@ if not st.session_state.auth:
     st.stop()
 
 # --- 5. CONFIGURACIÓN DE IA (GEMINI) ---
-# Aquí estaba el error de indentación, ya corregido:
 try:
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
     model = genai.GenerativeModel('gemini-1.5-pro')
@@ -98,25 +97,4 @@ if st.sidebar.button("Cerrar Sesión"):
     st.rerun()
 
 st.title("🤖 Consultorio BIMMER")
-archivo = st.file_uploader("📸 BIMMER Vision: Subí una captura de Revit", type=["png", "jpg", "jpeg"])
-
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-
-if prompt := st.chat_input("Escribí tu consulta técnica aquí..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    with st.chat_message("assistant"):
-        instruccion = "Sos BIMMER, asistente experto de Phoenix Consultores. Respondé de forma técnica sobre Revit y BIM."
-        try:
-            with st.spinner("BIMMER está pensando..."):
-                if archivo:
-                    img = Image.open(archivo)
-                    response = model.generate_content([instruccion + "\n" + prompt, img])
-                else:
+archivo = st.file_uploader("📸 BIMMER Vision: Subí una captura de Revit", type=["png", "jpg", "
